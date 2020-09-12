@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Vue and indexedDB</title>
+        <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    </head>
+    <body>
+        <h1>Vue and IndexedDB</h1>
+        <div id="app">
+            <h2>{{ subtitle }}</h2>
+            <h3 v-if="guest">Director on top: {{ guest }}</h3>
+            
+        </div>
+        <script>
+            var vm = new Vue({
+                el: '#app',
+                data() {
+                    return {
+                        subtitle: 'Save data on indexedDB',
+                        directors: [ { name: 'Martin Scorsese', nat: 'US', movie: 'The Godfellas' }, 
+                            { name: 'David Fincher', nat: 'US', movie: 'The Social Network' }, 
+                            { name: 'Quentin Tarentino', nat: 'US', movie: 'Pulp Fiction' }, 
+                            { name: 'Christopher Nolan', nat: 'GB', movie: 'Inception' }, 
+                            { name: 'Denis Villeneuve', nat: 'CA', movie: 'Prisoners' }, 
+                            { name: 'Claude Lelouch', nat: 'F', movie: 'Un Homme et une Femme' } ],
+                        toAdd: [ { name: 'Steven Spielberg', nat: 'US', movie: 'Duel' }, 
+                            { name: 'George Lucas', nat: 'US', movie: 'Star Wars' } ],
+                        guest: ''
+                    }
+                },
+                methods: {
+                    setDatabase(){
+                        var request = window.indexedDB.open("VueDatabase", 3);
+                        console.log('DB', request)
+                        request.onerror = function(event){
+                            console.log('NO DB', event)
+                        }
+                        request.onsuccess = function(event) {
+                            let db = request.result
+                            console.log('DB SUCCESS', db)
+                            let transaction = db.transaction(["directors"], "readwrite")
+                            transaction.oncomplete = function(){
+                                console.log('DIRECTORS', db.directors)
+                            }
+                            let store = transaction.objectStore('directors')
+                            let storeRequest = store.add({ name: 'Claude Lelouch', nat: 'F', movie: 'Un Homme et une Femme' })
+                            storeRequest.onsuccess = function(event){
+                                console.log('ADDED!', storeRequest)
+                                let db = request.result
+                                let list = db.transaction('directors').objectStore('directors')
+                                list.openCursor().onsuccess = function(event){
+                                    let cursor = event.target.result
+                                    if (cursor){
+                                        console.log('ANOTHER DIRECTOR', cursor)
+                                        cursor.continue()
+                                    }
+                                }
+                            }
+                        }
+ 
+                    },
+                    setDominoesDatabase(){
+                        var request = window.indexedDB.open("Dominoes", 7);
+                        console.log('DB', request)
+                        request.onerror = function(event){
+                            console.log('NO DB', event)
+                        }
+                        request.onupgradeneeded = function(event) {
+                            console.log('EVENT', event)
+                            let db = event.target.result
+                            console.log('DB ON UPGRADE...', db)
+                            
+                            let store = db.createObjectStore("history", { keyPath: "row"})
+                            
+                            store.createIndex("game", "game", { unique: true })
+                            console.log('HISTORY', db.history)
+                            
+                            store.oncomplete = function(event){
+                                let historyStore = db.transaction("history", "readwrite").objectStore("history")
+                                console.log('HISTORY INSTALLED!', db.history)
+                                    }
+                                }        
+                            
+                            
+                       
+ 
+                    },
+                    getData(){
+                        var request = window.indexedDB.open("VueDatabase", 3);
+                        request.onsuccess = function(event){
+                        let db = request.result
+                        var store = db.transaction("directors").objectStore("directors");
+
+                        store.openCursor().onsuccess = function(event) {
+                            let cursor = event.target.result;
+                            if (cursor) {
+                            console.log("Director: " + cursor.value.name + " , masterpiece: " + cursor.value.movie);
+                            cursor.continue();
+                        }
+                        else {
+                            alert("No more entries!");
+                            }
+                        }
+
+                        }
+                    },
+                    async filterDataAsync(prop, value){
+                        let request = await window.indexedDB.open("VueDatabase");
+                        return Promise.resolve().then( () => {
+                            request.onsuccess = function(event){
+                                let sup = document.createElement('ul')
+                                let list = document.querySelector('#app').insertAdjacentElement('beforeend', sup)
+
+                                let db = request.result
+                                let store = db.transaction("directors").objectStore("directors");   
+                                let cursor = store.openCursor()
+                                cursor.onsuccess = function(event){
+                                    let openedCursor = cursor.result
+                                    if (openedCursor) {
+                                        if (openedCursor.value[prop] === value) {
+                                            let listItem = document.createElement('li')
+                                            list.appendChild(listItem)
+                                            listItem.innerHTML = `Director: ${openedCursor.value.name}, with his masterpiece: ${openedCursor.value.movie}`
+                                        }
+                                        openedCursor.continue();
+                                    }
+                                    else {
+                                        let listItem = document.createElement('li')
+                                        list.appendChild(listItem)
+                                        listItem.innerHTML = `No more director from this nationality!`
+                                        }
+                                }
+                            }
+
+                        })
+                            
+                    },
+                    async stopAndGetData(){
+                        await this.getData()
+                    },
+                    getOneData(key){
+                        let request = window.indexedDB.open("VueDatabase", 3);
+                        request.onsuccess = function(event){
+                            let db = request.result
+                            let transaction = db.transaction("directors").objectStore("directors");
+                            let query = transaction.get(key);
+
+                            query.onsuccess = function(event) {
+                            // Faire quelque chose avec request.result !
+                            //console.log(`Director: ${query.result.name}, nationality: ${query.result.nat}, masterpiece: ${query.result.movie}`)
+                            let appLine = document.querySelector('#app')
+                            let headline = document.createElement('h3')
+                            headline.innerHTML = 'Guest and exposed: ' + query.result.name
+                            appLine.appendChild(headline)
+                            let masterLine = document.createElement('span')
+                            masterLine.innerHTML = 'for his masterpiece: '
+                            appLine.appendChild(masterLine)
+                            let masterTitle = document.createElement('em')
+                            masterTitle.innerHTML = query.result.movie
+                            appLine.appendChild(masterTitle)
+                            this.guest = query.result.name
+                            console.log('GUEST', this.guest)
+                            
+                            
+                            //this.guest.name = event.target.getAttribute('name')
+                            //this.guest.movie = event.target.getAttribute('movie')
+                                }
+                            }
+                        },
+                        // updateOneData(key, movie){
+                        //     let request = window.indexedDB.open("VueDatabase", 3);
+                        //     request.onsuccess = function(event){
+                        //     let db = request.result
+                        //     let transaction = db.transaction(["directors"], 'readwrite').objectStore("directors");
+                        //     console.log('TRANSACTION', transaction)
+                        //     let query = transaction.get(key)
+                        //     console.log('QUERY', query)
+
+                        //     query.onsuccess = function(event) {
+                        //         let itemToUpdate = query.result
+                        //         itemToUpdate.movie = movie
+                        //         let update = transaction.put(itemToUpdate)
+                        //         console.log('UPDATE', update)
+                        //         update.onsuccess = function(event){
+                        //             console.log('UPDATED!', transaction)
+                        //             }
+                        //         }
+                        //     }
+                        // },
+
+                        async updateOneDataAsync(key, movie){
+                            let request = await window.indexedDB.open("VueDatabase", 3);
+
+                            return Promise.resolve().then( () => {
+                                request.onsuccess = function(event){
+                                let db = request.result
+                                let transaction = db.transaction(["directors"], 'readwrite').objectStore("directors");
+                                console.log('TRANSACTION', transaction)
+                                let query = transaction.get(key)
+                                console.log('QUERY', query)
+    
+                                query.onsuccess = function(event) {
+                                    let itemToUpdate = query.result
+                                    itemToUpdate.movie = movie
+                                    let update = transaction.put(itemToUpdate)
+                                    console.log('UPDATE', update)
+                                    update.onsuccess = function(event){
+                                        console.log('UPDATED!', transaction)
+                                        }
+                                    }
+                                }
+
+                            })
+                        },
+                        addSomeData(data){
+                            let request = window.indexedDB.open("VueDatabase", 3);
+                            request.onsuccess = function(event){
+                            let db = request.result
+                            let transaction = db.transaction(["directors"], 'readwrite').objectStore("directors");
+                            console.log('TRANSACTION FOR ADDING', transaction)
+
+                            transaction.onsuccess = function(event) {
+                                console.log('ADDED!')
+                            }
+                            
+                            for (let item of data){
+                                transaction.add(item)
+                                }
+                            }
+                        },
+                        async addDataAsync(data){
+                            const request = await window.indexedDB.open("VueDatabase", 3)
+                            
+                            return Promise.resolve().then( ()=> {
+                                    
+                                request.onsuccess = function(event){
+                                let db = request.result
+                                        
+                                let transaction = db.transaction(["directors"], 'readwrite').objectStore("directors");
+                                console.log('TRANSACTION FOR ADDING', transaction)
+
+                                for (let item of data){
+                                    transaction.add(item)
+                                    }
+
+                                }
+                                     
+                                
+                            })
+                        }
+                        
+                    
+                }    
+                
+            })
+            //console.log(vm.toAdd)
+            //vm.setDatabase()
+            //vm.stopAndGetData()
+            //vm.getOneData('Martin Scorsese')
+            //vm.updateOneData('Martin Scorsese', 'Taxi Driver')
+            //vm.addSomeData(vm.toAdd)
+            //vm.setDominoesDatabase()
+            //vm.addDataAsync([{ name: 'Sam Mendes', nat: 'GB', movie: 'The Road to Perdition' }, { name: 'Alan Parker', nat: 'US', movie: 'The Wall' }])
+            //vm.updateOneDataAsync('Brian de Palma', 'Phantom of the Paradise')
+            vm.filterDataAsync('nat', 'GB')
+        </script>
+    </body>
+</html>

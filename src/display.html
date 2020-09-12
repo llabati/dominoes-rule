@@ -1,0 +1,145 @@
+<head>
+        <meta charset="utf-8">
+        <title>Dominoes!</title>
+        <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+        <style>
+            #app {
+                width: 502px;
+                background-color: bisque;
+            }
+            #app div {
+               
+                border: solid 1px black;
+            }
+            .hor {
+                display: flex;
+                flex-direction: row;
+                justify-content:center;
+                width: 500px;
+                height: 100px;
+            }
+            .vert {
+                display: flex;
+                flex-direction: column;
+                
+                width: 100px;
+                height: 300px;
+            }
+            #top {
+            
+            }
+            #left {
+                justify-content: end;
+            }
+            #begin {
+
+            }
+            #right {
+                position: relative;
+                left: 400px;
+                justify-content: flex-start;
+            }
+            #bottom {
+
+            }
+            .piece {
+                width: 90px;
+                height: 45px;
+                border: solid 1px blue;
+                background: cadetblue;
+            }
+            .lefty {
+                width: 45px;
+                height: 90px;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="app">
+            <div id="top" class="hor"></div>
+            <div id="left" class="vert">
+                <!-- <div v-if="left.includes(piece) && pieces > 7 && pieces <= 8" class="piece lefty">8</div>
+                <div v-if="left.includes(piece) && pieces > 6 && pieces <= 8" class="piece lefty">7</div>
+                <div v-if="left.includes(piece) && pieces > 5 && pieces <= 8" class="piece lefty">6</div> -->
+                
+            </div>
+            <div id="begin" class="hor">
+                <!-- <div v-if="pieces > 0" class="piece">1</div>
+                <div v-if="pieces > 1" class="piece">2</div>
+                <div v-if="pieces > 2" class="piece">3</div>
+                <div v-if="pieces > 3" class="piece">4</div>
+                <div v-if="pieces > 4" class="piece">5</div> -->
+            </div>
+            <div id="right" class="vert">
+                <!-- <div v-if="right.includes(piece) && pieces > 5 && pieces <= 8" class="piece righty">6</div>
+                <div v-if="right.includes(piece) && pieces > 6 && pieces <= 8" class="piece righty">7</div>
+                <div v-if="right.includes(piece) && pieces > 7 && pieces <= 8" class="piece righty">8</div>
+                 -->
+            </div>
+            <div id="bottom" class="hor"></div>
+            
+        </div>
+        <script>
+            var vm = new Vue({
+                el: '#app',
+                data(){
+                    return {
+                        begin: [],
+                        left: [],
+                        top: [],
+                        right: [],
+                        bottom: [],
+                        pieces: 0,
+                        piece: {}
+                        //lefty: true
+                    }
+                },
+                methods: {
+                    addAPiece(piece){
+                        ++this.pieces
+                        this.piece = piece
+                        //this.lefty = lefty
+                        console.log('PIECES', this.pieces)
+                        console.log('PIECE', this.piece)
+                        
+                        
+                        if (this.pieces <= 5) this.begin.push(piece)
+                        if (this.pieces > 5 && this.pieces <= 8 && this.piece.lefty) {
+                            this.left.push(piece)
+                            let leeft = document.querySelector('#left')
+                            let newLeft = document.createElement('div')
+                            newLeft.className = "piece"
+                            newLeft.className = "lefty"
+                            
+                            leeft.appendChild(newLeft)
+                        }
+                        if (this.pieces > 8 && this.piece.lefty) this.top.push(piece)
+                        if (this.pieces > 5 && this.pieces <= 8 && this.piece.lefty === false) {
+                            this.right.push(piece)
+                            let riight = document.querySelector('#right')
+                            let newRight = document.createElement('div')
+                            newRight.className = "piece"
+                            // newRight.className = "righty"
+                            
+                            riight.appendChild(newRight)
+                        }
+                        if (this.pieces > 8 && this.piece.lefty === false) this.bottom.push(piece)
+                        console.log('LEFT?', this.left.includes(this.piece))
+                        console.log('RIGHT?', this.right.includes(this.piece))
+
+                        console.log('BEGIN', this.begin)
+                        if (this.left.length) console.log('LEFT', this.left)
+                        if (this.right.length) console.log('RIGHT', this.right)
+
+                    }
+                }
+            })
+            vm.addAPiece({a: 0, b: 5, lefty: true})
+            vm.addAPiece({a: 0, b: 5, lefty: true})
+            vm.addAPiece({a: 0, b: 5, lefty: true})
+            vm.addAPiece({a: 0, b: 5, lefty: true})
+            vm.addAPiece({a: 0, b: 5, lefty: true})
+            vm.addAPiece({a: 0, b: 5, lefty: true})
+            vm.addAPiece({a: 0, b: 5, lefty: false})
+            vm.addAPiece({a: 0, b: 5, lefty: false})
+        </script>
