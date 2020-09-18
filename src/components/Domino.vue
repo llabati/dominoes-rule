@@ -85,6 +85,9 @@ export default {
 .domino-mid {
     transform: rotate(0.50turn);
 }
+.domino-quart {
+    transform: rotate(-0.50turn);
+}
 /*.half-domino {
     width: 80px;
     height: 80px;

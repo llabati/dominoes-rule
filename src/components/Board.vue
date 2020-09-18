@@ -24,7 +24,7 @@
             
         #bottom(v-if='bottom.length')
             ul.flex-bottom-list
-                li(v-for="piece in bottom" :key="piece.id" class="domino-mid")
+                li(v-for="piece in bottom" :key="piece.id" class="domino-quart")
                     domino(:value='piece.value' :class='{ "domino-vert": !piece.isDouble ,"domino-swap": piece.swap }')
     
 </template>

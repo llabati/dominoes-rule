@@ -5,7 +5,7 @@
     
     board
     
-    playing-zone(:name='name' :launch='launch' :display='display')
+    playing-zone(:name='name' :display='display')
 
 </template>
 
@@ -26,7 +26,7 @@ export default {
       name: '',
       launch: false,
       display: false,
-      dbExists: true,
+      dbExists: false,
     }
   },/*
   watch: {
@@ -36,6 +36,9 @@ export default {
     }
   },*/
   computed: {
+    /*version(){
+      return this.searchForDatabase()
+    }
     /*board: {
             get(){
                 return this.$store.state.board
@@ -54,10 +57,16 @@ export default {
       return this.$store.state.shuffledPieces.length
     } */
   },
+  /*watch: {
+    version(){
+      if (this.version <= 3) this.dbExists = false
+      else this.dbExists = true
+    }
+  },*/
   methods: {
     nameThisPlayer(name){
       console.log('DB EXISTS WHEN NAME', this.dbExists)
-      if (this.dbExists) this.setDatabase(name)
+      if (!this.dbExists) this.setDatabase(name)
       else this.addNewPlayerToDatabase(name)
       this.name = name
       let currentPlayer = new Player(name)
@@ -70,17 +79,21 @@ export default {
       } */
       this.display = true
     },
-    searchForDatabase(name){
-    var request = window.indexedDB.open(name) 
+    searchForDatabase(){
+    var request = window.indexedDB.open('DominoBase') 
     request.onsuccess = function (e){ 
         let version = e.target.result.version
+        return version
         //console.log('VERSION', version)
-        this.dbExists = version < 3 ? false : true
-        alert('DB EXISTS NOW', this.dbExists)
+        //request.oncomplete = function(event) {
+        //  if (version < 4) this.dbExists = false
+        //  else this.dbExists = true
+        //this.dbExists = version === 4 ? true : false
+        alert('DB EXISTS NOW')
       //window.indexedDB.deleteDatabase(name);
-        } 
-     
-      }, 
+          } 
+        },
+      
   
   setDatabase(name){
     //console.log('SETTING THE DB')
@@ -120,15 +133,14 @@ export default {
         let db = event.target.result
         let gamesObjectStore = db.transaction("games", "readwrite").objectStore("games")
         let res = gamesObjectStore.get(name)
-        res.onerror = function(event){
-          gamesObjectStore.add({player: name, player_score: 0, player_victory: false, machine: "IA", machine_score: 0, machine_victory: false})
-          alert('NEW PLAYER ADDED:', name)
-        }
         res.onsuccess = function(event){
-          alert('PLAYER ALREADY EXISTS')
-        }
+          alert ('GOT PLAYERS')
+          gamesObjectStore.add({player: name, player_score: 0, player_victory: 0, machine: "IA", machine_score: 0, machine_victory: 0})
+          
+          }
+
+      }
     }
-}
 
   },
 
@@ -140,9 +152,10 @@ export default {
   mounted(){
     console.log('GAME', this.dbExists)
     this.launch = true
-    this.searchForDatabase("DominoBase")
+    let version = this.searchForDatabase("DominoBase")
     //console.log('DB EXISTS', this.dbExists)
-    
+    if (version <= 3) this.dbExists = false
+    else this.dbExists = true
 
   }
 };

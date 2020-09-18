@@ -1,10 +1,10 @@
 <template lang="pug">
     div(:class="{ intro: show, hidden: !show }")
-        label.lead(for='name') Placer le domino à gauche ou à droite ?
+        p.explanation {{ message }}
         form.input-zone
             select.input-name(name='side' ref='side' v-model='side')
-                option gauche
-                option droite
+                option(value='gauche') gauche
+                option(value='droite') droite
             button.btn-name(@click='close') Choisissez
     
 </template>
@@ -12,6 +12,9 @@
 <script>
 import { store } from '../store/index'
 export default {
+    props: {
+        message: String
+    },
     data(){
         return {
             show: true,
@@ -24,6 +27,7 @@ export default {
             e.preventDefault()
             this.$emit('chosenSide', this.side)
             this.show = false
+            //this.chooseSide = false
         }
     },
     directives: {
@@ -37,8 +41,8 @@ export default {
 <style scoped>
 .intro {
     width: 30%;
-    position: relative;
-    top: 300px;
+    /*position: relative;
+    top: 300px;*/
     margin: 20px auto;
     padding: 15px;
     border: solid 3px white;
@@ -50,9 +54,9 @@ export default {
     animation: GetVisible 3s ease;
 }
 .input-zone {
-    display: flex;
+    /*display: flex;
     flex-direction: row;
-    justify-content: space-around;
+    justify-content: space-around;*/
     width: 80%;
     background-color: white;
     border: solid 2px red;

@@ -1,7 +1,8 @@
 <template lang="pug">
     div(:class="{ intro: show, hidden: !show }")
-        p.alert {{ notification }}
-        button.btn-notif(@click='close') Continuez
+        p.explanation {{ message }}
+        div.includes-btn
+            button.btn-notif(@click='close') Continuez
     
 </template>
 
@@ -9,21 +10,20 @@
 //import { store } from '../store/index'
 export default {
     props: {
-        notification: String
+        message: String
     },
     data(){
         return {
             show: true,
-            name: ''
         }
     },
-    store,
     methods: {
         named(){
             },
         close(e){
             e.preventDefault()
             this.show = false
+            this.alert = false
         }
     },
     
@@ -33,8 +33,8 @@ export default {
 <style scoped>
 .intro {
     width: 30%;
-    position: relative;
-    top: 300px;
+    /*position: relative;
+    top: 100px;*/
     margin: 20px auto;
     padding: 15px;
     border: solid 3px white;
@@ -45,26 +45,16 @@ export default {
     color: white;
     animation: GetVisible 3s ease;
 }
-.input-zone {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-around;
+
+.explanation {
     width: 80%;
-    background-color: white;
-    border: solid 2px red;
-    margin: 10px auto;
-}
-.input-name {
-    width: 66%;
-    margin: 0;
-    border: 1px;
-    height: 100%;
-    font-size: 20px;
-    padding: 5px;
+    margin: auto;
+    color: white;
+    font-size: 18px;
 }
 .btn-notif {
-    float: right;
-    margin: 10px;
+    /*float: right;*/
+    margin-left: 50%;
     padding: 10px;
     border-radius: 5px;
     box-shadow: 2px 2px 2px 2px rgba(0, 0, 0, .3);
@@ -73,6 +63,11 @@ export default {
     font-weight: 400;
     text-transform: uppercase;
     cursor: pointer;
+}
+.includes-btn {
+    width: 80%;
+    margin: 5px auto;
+    padding: 5px;
 }
 .hidden {
     display: none;

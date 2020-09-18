@@ -8,12 +8,15 @@
                 li(v-for="piece in playerHand" :key="piece.id")
                     domino.domino-vert.active-domino(:value='piece.value' @chosenLeft="chooseDomino(piece, 'left')" @chosenRight="chooseDomino(piece, 'right')")
 
-        select(v-if='chooseSide' v-on:chosenSide='chooseDomino')
-        div(v-if='progression')
+        select(v-if='chooseSide' :message='message' v-on:chosenSide='chooseDomino(side)')
+        
+        //div(v-if='progression')
             p(style="color: white; font-size: 24px;")
                 strong {{ victoryMessage }}
         
-        p.explanation(v-if='start') {{ intro }}
+        alert(v-if='alert' :message="message") 
+
+        //prompt(v-if='prompt' :message='message')
 
         div(v-if='display')
             transition(name='fade' mode='in-out')
@@ -21,7 +24,7 @@
                     strong {{ name }}, lancez le jeu
                 button.intro(v-if='draw' style='background-color: brown;' ref='draw' @click='drawAgain(1)') 
                     strong Piochez
-                button.intro(v-if='stopDrawing' style='background-color: yellow; color: black;' ref='pass' @click='pass=!pass') 
+                button.intro(v-if='stopDrawing' style='background-color: yellow; color: black;' ref='pass' @click='upto=!upto') 
                     strong Passez
             
 
@@ -39,33 +42,36 @@ import progression from '../services/progression.js'
 import utils from '../services/utils.js'
 import calculations from '../services/calculations.js'
 import Select from './Select.vue'
+import Alert from './Alert.vue';
 //import display from '../services/display.js'
 
 export default {
     props: {
         name: String,
-        launch: Boolean,
+        //launch: Boolean,
         display: Boolean
     },
     store,
     components: {
         Domino,
         ProgressionCircle,
-        Select
+        Select,
+        Alert
     },
     data(){
         return {
-            intro: `Cliquez sur le domino de votre choix; il se placera automatiquement sur le tapis.
+            /*message: `Cliquez sur le domino de votre choix; il se placera automatiquement sur le tapis.
               Si vous avez le choix entre le placer à gauche ou à droite, un clic simple l'envoie à gauche,
-              un double clic l'envoie à droite.`,
-            
+              un double clic l'envoie à droite.`,*/
+            message: '',
+            alert: false,
             upto: false,
             tour: 0,
             chooseSide:false,
             keepPlaying: true,
             playerChoices: [],
             draw: false,
-            
+            possibleLocks: [],
             playerStarts: false,
             machineStarts: false,
             
@@ -79,17 +85,17 @@ export default {
             double: false,
             wrong: false,
             progression: false,
-            victoryMessage: ''
+            
 
         }
     },
     watch: {
-        launch(){
+       /* launch(){
             if (this.launch) {
                 this.resetAll()
                 this.launch = false
             }
-        },
+        },*/
         upto(){
             var self = this
             setTimeout(() => { self.machinePlays() }, 1500)
@@ -109,9 +115,15 @@ export default {
         },
         // mauvais domino joué
         wrong(){
-          if (this.wrong) this.intro = this.name + ', vous ne pouvez pas jouer ce domino ! Peut-être devez-vous piocher...'
-          if (this.wrong === false) this.intro = `Cliquez sur le domino de votre choix; il se placera automatiquement sur le tapis.
+          if (this.wrong) {
+              this.message = this.name + ', vous ne pouvez pas jouer ce domino ! Peut-être devez-vous piocher...'
+              this.alert = true
+          }
+          if (this.wrong === false) {
+              this.alert = false
+              this.message = `Cliquez sur le domino de votre choix; il se placera automatiquement sur le tapis.
               Si vous avez le choix entre le placer à gauche ou à droite, un clic l'envoie à gauche, un double clic l'envoie à droite.`
+          }
         },
         // le joueur peut-il encore jouer ?
         playerChoices(){
@@ -263,41 +275,58 @@ export default {
     methods: {
         async letsPlay(){
             if (this.tour === 0) {
-                await this.$store.dispatch('invertStart')
+                console.log('START', this.start, 'STORE START', this.$store.state.start)
+                //await this.$store.dispatch('invertStart')
                 await progression.startGame()
-                this.start = false
+                //this.start = false
                 let starter = progression.whoStarts(this.player, this.machine, this.tour)
                 this.tour = 1
-                console.log('THE PLAYERS', this.player, this.machine, this.tour)
+                console.log('THE PLAYERS', this.player, this.machine, this.tour, 'START', this.start)
                 if (starter.name) {
                     console.log(this.tour, 'C EST LE JOUEUR QUI COMMENCE', this.player)
                     this.playerStarts = true
+                    this.message = `C'est vous qui commencez ! L'application vient de jouer pour vous, mais ensuite, pour jouer vous devrez cliquer sur le domino de votre choix; il se placera automatiquement sur le tapis.
+              Si vous avez le choix entre le placer à gauche ou à droite, un clic simple l'envoie à gauche, un double clic l'envoie à droite.`
+                    this.alert = true
                     }
                 else {
                     console.log(this.tour, 'C EST LA MACHINE QUI COMMENCE', this.machine)
                     this.machineStarts = true
+                    this.message = `C'est la machine qui commence ! Pour jouer, cliquez sur le domino de votre choix; il se placera automatiquement sur le tapis.
+              Si vous avez le choix entre le placer à gauche ou à droite, un clic simple l'envoie à gauche, un double clic l'envoie à droite.`
+                    this.alert = true
                 }
             }
-            if (this.tour > 1) {
+            if (this.tour === 1) {
+                console.log('START 1', this.start, 'STORE START 1', this.$store.state.start)
                 let name = this.$store.state.player.name
                 await this.$store.dispatch('invertStart')
-                await progression.startGame()
-                await this.getFromDatabase(name)
+                //await progression.startGame()
+                let response = this.getFromDatabase(name)
                 let machine_recent_winning = response.machine_recent_winning 
                 let player_recent_winning = response.player_recent_winning
 
 
                 // afficher ici les résultats et la progression et le cumul des manches avec response.player_score et response.machine.score
-                console.log('OU EN SOMMES NOUS ?', 'JOUEUR: ', response.player_score, 'MACHINE: ', response.machine_score)
-                this.start = false
+                //console.log('OU EN SOMMES NOUS ?', 'JOUEUR: ', response.player_score, 'MACHINE: ', response.machine_score)
+                //this.start = false
                 
                 if (machine_recent_winning) {
+                    this.message = `C'est à la machine de commencer !`
+                    this.alert = true
                     this.machinePlays()
                 }
                 if (player_recent_winning) {
-                    this.playerStartsMessage = "C'est à vous de commencer !"
+                    this.message = "C'est à vous de commencer !"
                     console.log('C EST A VOUS !')
+                    this.alert = true
                 }
+                
+            }
+            if (this.tour > 1) {
+                console.log('START N', this.start, 'STORE START N', this.$store.state.start)
+                
+                
             }
         },
         
@@ -305,7 +334,8 @@ export default {
       playerPlays(domino){
         if (this.tour === 1 && this.player.isStarting === true){
             console.log(`Player is starting with ${this.player.start.value[0]} ${this.player.start.value[1]}`)
-            this.startingMessage = "C'est vous qui commencez ! L'application vient de jouer pour vous..."
+            this.message = "C'est vous qui commencez ! L'application vient de jouer pour vous..."
+            this.alert = true
             //let allPieces = [ ...document.querySelectorAll('#player-hand img')].map( img => img.addEventListener('click', this.chooseDomino(img, 'left')))
             domino.player = true
             this.$store.dispatch('addToBoard', this.player.start, 'tour', this.tour)
@@ -325,6 +355,7 @@ export default {
             }
 
         }
+        //this.alert = false
         this.tour = ++this.tour
         this.upto = !this.upto
         this.keepPlaying = true
@@ -333,7 +364,7 @@ export default {
       /////////////////////////////////////////////////////////
       // c'est le joueur qui joue
         chooseDomino(domino, side){
-            console.log('CHOOSE THIS DOMINO', domino)
+            console.log('CHOOSE THIS DOMINO', domino, 'SIDE...', side)
             domino.player = true
             if (this.wrong) this.wrong = false
             //this.playerChoices = calculations.evaluatePlayerChoices()
@@ -363,10 +394,12 @@ export default {
                 this.warningWrongDomino(domino, this.head, this.tail)
                 if (this.wrong === true) return
                 /*else{
-                    // lorsqu'on a un domino qui peut être placé à gauche ou à droite
-                    if ((domino.value[0] === this.head && domino.value[1] === this.tail) || (domino.value[1] === this.head && domino.value[0] === this.tail)) {
+                    // lorsqu'on a un domino qui peut être placé à gauche ou à droite*/
+                if ((domino.value[0] === this.head && domino.value[1] === this.tail) || (domino.value[1] === this.head && domino.value[0] === this.tail)) {
                     this.chooseSide = true
-                    
+                    this.message = 'Vous pouvez placer votre domino à gauche ou à droite. Choisissez !'
+                    this.select = true
+                }
                     /*if ((domino.value[0] === this.board.tail && domino.value[1] === this.board.head) || (domino.value[0] === this.board.head && domino.value[1] === this.board.tail)) {
                         domino.left = 
                         if (domino.place === "left") {
@@ -422,6 +455,21 @@ export default {
             if (this.keepPlaying === true) {
                 console.log('KEEP PLAYING!')
                 if (this.$store.state.board.length > 0){
+                    let knownDominoes = this.$store.state.machine.hand.concat(this.$store.state.board)
+                    console.log('KNOWNDOMINOES', knownDominoes)
+                    let valuedDominoes = knownDominoes.map( d => d.value )
+                    console.log('VALUED DOMS', valuedDominoes)
+                    let allValues = valuedDominoes.reduce( (acc, cur) => acc.concat(cur), [])
+                    console.log('ALL VALUES', allValues)
+                    let stats = allValues.reduce( (acc, cur) => {
+                        if (!acc[cur]) acc[cur] = 1
+                        else acc[cur]++
+                        return acc
+                        }, {}) 
+                        console.log('WHERE ARE WE?', stats)
+                    //let possibleLocks = stats.filter( d => d[1] > 4 )
+                    //this.possibleLocks = possibleLocks
+                    //console.log('POSSIBLE LOCKS', possibleLocks)
                     // détermination des choix possibles pour la machine
                     let choices = []
                     //this.board.head = calculations.calculateHead()
@@ -473,10 +521,13 @@ export default {
                         }
                     }
                     //la machine a un ou plusieurs dominos possibles : comment choisir le meilleur ?
-                    if (machineChoices.length > 0) return this.makeChoice(machineChoices, this.head, this.tail)
+                    if (machineChoices.length > 0) return this.makeChoice(machineChoices)
                 }
+            }
                 else {
-                    //display.addAPiece(this.machine.start, null)
+                    if (this.restPieces === 0 && !this.playerChoices.length) {
+                        this.neitherWins = true
+                    }
                 }
                 //this.upto = !this.upto
                 this.keepPlaying = false
@@ -485,7 +536,7 @@ export default {
                 this.playerChoices = calculations.evaluatePlayerChoices()
                 console.log('PLAYER CHOICES', this.playerChoices)
                 if (!this.playerChoices.length) this.draw = true
-            }
+            
         },
         /////////////////////////////////////////////////////////////////
       // pioche (illimitée, jusqu'à trouver le bon domino, ou à vider la réserve)
@@ -500,6 +551,7 @@ export default {
             if (player === 1) {
                 this.empty = true
                 this.$store.dispatch('drawOne', player)
+                calculations.evaluatePlayerChoices()
                 return this.$store.state.player.hand
             }
             // si c'est la machine qui pioche
@@ -555,25 +607,38 @@ export default {
         },
 
         // afficher le résultat de la partie
-    claimVictory(){
+    async claimVictory(){
         this.progression = true
         let results = { neitherWins: this.neitherWins, playerWins: this.playerWins, machineWins: this.machineWins, player: this.playerHand, machine: this.machineHand }
         let finalTotal = utils.calculateScores(results)
-
         if (this.neitherWins) {
-            if (finalTotal > 0) this.victoryMessage = 'Les deux joueurs sont bloqués, mais c\'est la machine qui gagne, avec ' + finalTotal + " points."
-            if (finalTotal < 0) this.victoryMessage = 'Les deux joueurs sont bloqués, mais c\'est vous, '+ this.name + ', qui gagnez avec ' + Math.abs(finalTotal) + " points."
-            if (finalTotal === 0) this.victoryMessage = 'Les deux joueurs sont bloqués. Pas de vainqueur pour cette manche.'
+            if (finalTotal > 0) this.message = 'Les deux joueurs sont bloqués, mais c\'est la machine qui gagne, avec ' + finalTotal + " points."
+            if (finalTotal < 0) this.message = 'Les deux joueurs sont bloqués, mais c\'est vous, '+ this.name + ', qui gagnez avec ' + Math.abs(finalTotal) + " points."
+            if (finalTotal === 0) this.message = 'Les deux joueurs sont bloqués. Pas de vainqueur pour cette manche.'
         }
-        if (this.playerWins) this.victoryMessage = "Bravo, "+ this.name + ", vous gagnez avec " + finalTotal + " points !"
-        if (this.machineWins) this.victoryMessage = "C'est la machine qui gagne, avec "+ finalTotal + " points !"
-        this.$store.dispatch('invertStart')
-        this.draw = false
-        this.stopDrawing = false
+        if (this.playerWins) this.message = "Bravo, "+ this.name + ", vous gagnez avec " + finalTotal + " points !"
+        if (this.machineWins) this.message = "C'est la machine qui gagne, avec "+ finalTotal + " points !"
+        this.alert = true
+        //alert ('AND NOW, THE DB!')
+        await this.updateDatabase(this.name, results, finalTotal)
+        //this.limitTo100(this.name)
         
+        await this.isTheGameEnded(this.getFromDatabase, this.name)
+
+        await console.log('AFTER AWAIT... THE RESPONSE', response)
+        setTimeout( () => {
         
-        alert ('AND NOW, THE DB!')
-        this.updateDatabase(this.name, results, finalTotal)
+            this.$store.dispatch('clearAll')
+            //this.$store.dispatch('invertStart')
+            this.draw = false
+            this.stopDrawing = false
+            this.progression = false
+            this.alert = false
+            this.start = true
+            this.tour = 1
+            //this.start = Math.max(scores.player_score, scores.machine_score) < 100 ? true : false
+        }, 5000)
+        
         },
 
     updateDatabase(player, results, finalTotal){
@@ -613,25 +678,66 @@ export default {
                 
             }
                 let update = gamesObjectStore.put(scores)
+                alert('UPDATE IS DONE')
+                res.oncomplete = function(event){
+                    console.log('SCORES', scores)
+                    return scores
+                }
                 
             }
         }
     },
 
-    getFromDatabase(player){
+    getFromDatabase(name){
+    let response
     let request = window.indexedDB.open("DominoBase")
     request.onsuccess = function(event){
         let db = event.target.result
         let gamesObjectStore = db.transaction("games").objectStore("games")
-        let res = gamesObjectStore.get(player)
+        let res = gamesObjectStore.get(name)
         res.onsuccess = function(event){
-            let response = res.result
-            console.log('RESPONSE', response)
+            
+            response = res.result
+            console.log('RESPONSE FOUND', response)
             return response
+            }
+
+        /*res.oncomplete = function(event){
+            return response
+        }*/
+        }
+    },
+
+    async isTheGameEnded(fn, name){
+        await fn(name)
+        console.log('THE RESPONSE IS...', response)
+        if (response.player_score >= 100){
+            this.message = `Félicitations, ${this.name}, vous venez de remporter la partie !`
+            this.alert = true
+            this.start = false
+            this.draw = false
+            this.stopDrawing = false
+        }
+        if (response.machine_score >= 100){
+            this.message = `Désolé, ${this.name}, c'est la machine qui remporte la partie !`
+            this.alert = true
+            this.start = false
+            this.draw = false
+            this.stopDrawing = false
         }
 
-    }
-},
+    },
+
+    limitTo100(name){
+        let response = this.getFromDatabase(name)
+        console.log('RESPONSE', response)
+        if (response.player_score <= 100) {
+            this.message = "Vous avez gagné, " + this.name + ". Bravo !"
+        }
+        if (response.machine_score <= 100) {
+            this.message = "C'est la machine qui a gagné !"
+        }
+    },
         // remettre le composant PlayingZone à zéro pour une nouvelle partie
     resetAll(){
             
@@ -651,7 +757,8 @@ export default {
             this.playerStarts = false
             this.machineStarts = false
             this.wrong = false
-            this.victoryMessage = ''
+            this.message = ''
+            this.tour = 1
 
         } 
     }
@@ -670,15 +777,7 @@ export default {
     background-color: green;
     padding: 10px;
 }
-.explanation {
-    width: 50%;
-    border : solid 1px white;
-    border-radius: 3px;
-    margin: 20px auto;
-    padding: 15px;
-    color: white;
-    font-size: 18px;
-}
+
 .intro {
     width: 30%;
     margin: 20px auto;

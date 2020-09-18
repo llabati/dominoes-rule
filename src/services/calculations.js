@@ -38,12 +38,21 @@ export default {
     },
 
     // déterminer les possibilités que la machine a de bloquer le joueur et de le forcer à piocher
-    lockPlayer(machineChoices, head, tail){
+    lockPlayer(machineChoices, head, tail, possibleLocks){
+        /*let knownDominoes = store.state.machine.hand.concat(store.state.board)
+        let stats = Object.entries(knownDominoes.reduce( (acc, val) => {
+            if (!acc.hasOwnProperty(val)) acc[val] = 1
+            else acc[val]++
+            return acc
+        }, {}) )
+        console.log('WHERE ARE WE?', stats)
+        let possibleLocks = stats.filter( d => d[1] > 4 )
+        console.log('POSSIBLE LOCKS', possibleLocks)*/
         console.log('MACHINECHOICES in LOCKPLAYER', machineChoices)
-        let lockChoices = []
+        
         let lockHead = machineChoices.filter (d => d.value[0] === store.state.board[0].value[0] || d.value[1] === store.state.board[0].value[0])
         let lockTail = machineChoices.filter (d => d.value[0] === store.state.board[store.state.board.length-1].value[1] || d.value[1] === store.state.board[store.state.board.length-1].value[1])
-        lockChoices = [ ...lockHead, ...lockTail ]
+        let lockChoices = Array.from(new Set([ ...lockHead, ...lockTail ]))
         console.log('LOCKCHOICES', lockChoices)
         return lockChoices
     }

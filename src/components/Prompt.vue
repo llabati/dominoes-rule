@@ -34,11 +34,11 @@ export default {
 }
 </script>
 
-<style scoped>
+<style>
 .intro {
     width: 30%;
-    position: relative;
-    top: 300px;
+    /*position: relative;
+    top: 300px;*/
     margin: 20px auto;
     padding: 15px;
     border: solid 3px white;

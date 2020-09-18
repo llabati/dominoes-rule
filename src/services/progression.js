@@ -10,7 +10,7 @@ export default {
     console.log(store.state)
     if (store.state.board.length > 0) {
       store.dispatch('clearAll')
-      utils.resetAll()
+      //utils.resetAll()
     }
     //store.dispatch('setState')
     let click = 0
